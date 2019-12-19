@@ -409,6 +409,92 @@ static ssize_t nrf905_attr_listen_read(struct device *dev, struct device_attribu
 static DEVICE_ATTR(listen, 0664, nrf905_attr_listen_read, nrf905_attr_listen_write);
 
 
+/** @brief Read handler for the rx_msgsize sysfs attribute */
+static ssize_t nrf905_attr_rx_msgsize_read(struct device *dev, struct device_attribute *attr, char *buf) {
+    struct spi_device *spi = to_spi_device(dev);
+    uint8_t config;
+    uint8_t rx_msgsize;
+
+    config = nrf905_spi_r_config(spi, 3);
+
+    rx_msgsize = (config & 0x3f);
+
+    return sprintf(buf, "%hhu", rx_msgsize);
+}
+
+
+/** @brief Write handler for the rx_msgsize sysfs attribute */
+static ssize_t nrf905_attr_rx_msgsize_write(struct device *dev, struct device_attribute *attr, const char *buf, size_t count) {
+    struct spi_device *spi = to_spi_device(dev);
+    uint8_t config;
+    uint8_t rx_msgsize;
+
+    if (sscanf(buf, "%hhu", &rx_msgsize) != 1) {
+        return -EINVAL;
+    }
+
+    dev_info(dev, "rx_msgsize: %hhu\n", rx_msgsize);
+
+    if (rx_msgsize > 32 || rx_msgsize < 1) {
+        dev_warn(dev, "rx_msgsize %hhu out of range!\n", rx_msgsize);
+        return -EINVAL;
+    }
+
+    config = nrf905_spi_r_config(spi, 3);
+    config = (config & 0xc0) | rx_msgsize;
+    nrf905_spi_w_config(spi, 3, config);
+
+    return count;
+}
+
+
+/** @brief Device attribute for configuring rx message size **/
+static DEVICE_ATTR(rx_msgsize, 0664, nrf905_attr_rx_msgsize_read, nrf905_attr_rx_msgsize_write);
+
+
+/** @brief Read handler for the tx_msgsize sysfs attribute */
+static ssize_t nrf905_attr_tx_msgsize_read(struct device *dev, struct device_attribute *attr, char *buf) {
+    struct spi_device *spi = to_spi_device(dev);
+    uint8_t config;
+    uint8_t tx_msgsize;
+
+    config = nrf905_spi_r_config(spi, 4);
+
+    tx_msgsize = (config & 0x3f);
+
+    return sprintf(buf, "%hhu", tx_msgsize);
+}
+
+
+/** @brief Write handler for the tx_msgsize sysfs attribute */
+static ssize_t nrf905_attr_tx_msgsize_write(struct device *dev, struct device_attribute *attr, const char *buf, size_t count) {
+    struct spi_device *spi = to_spi_device(dev);
+    uint8_t config;
+    uint8_t tx_msgsize;
+
+    if (sscanf(buf, "%hhu", &tx_msgsize) != 1) {
+        return -EINVAL;
+    }
+
+    dev_info(dev, "tx_msgsize: %hhu\n", tx_msgsize);
+
+    if (tx_msgsize > 32 || tx_msgsize < 1) {
+        dev_warn(dev, "tx_msgsize %hhu out of range!\n", tx_msgsize);
+        return -EINVAL;
+    }
+
+    config = nrf905_spi_r_config(spi, 4);
+    config = (config & 0xc0) | tx_msgsize;
+    nrf905_spi_w_config(spi, 4, config);
+
+    return count;
+}
+
+
+/** @brief Device attribute for configuring tx message size **/
+static DEVICE_ATTR(tx_msgsize, 0664, nrf905_attr_tx_msgsize_read, nrf905_attr_tx_msgsize_write);
+
+
 /** @brief An array containing all the sysfs attributes */
 static struct attribute *nrf905_attributes[] = {
     &dev_attr_rx_address.attr,
@@ -416,6 +502,8 @@ static struct attribute *nrf905_attributes[] = {
     &dev_attr_frequency.attr,
     &dev_attr_pa_pwr.attr,
     &dev_attr_listen.attr,
+    &dev_attr_rx_msgsize.attr,
+    &dev_attr_tx_msgsize.attr,
     NULL,
 };
 
